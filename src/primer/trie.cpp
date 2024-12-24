@@ -1,4 +1,5 @@
 #include "primer/trie.h"
+#include <memory>
 #include <string_view>
 #include "common/exception.h"
 
@@ -6,12 +7,24 @@ namespace bustub {
 
 template <class T>
 auto Trie::Get(std::string_view key) const -> const T * {
-  throw NotImplementedException("Trie::Get is not implemented.");
+  // throw NotImplementedException("Trie::Get is not implemented.");
 
   // You should walk through the trie to find the node corresponding to the key. If the node doesn't exist, return
   // nullptr. After you find the node, you should use `dynamic_cast` to cast it to `const TrieNodeWithValue<T> *`. If
   // dynamic_cast returns `nullptr`, it means the type of the value is mismatched, and you should return nullptr.
   // Otherwise, return the value.
+  if (!this->root_) { return nullptr; }
+  auto cur = this->root_;
+  for (char c : key) {
+    if (cur->children_.count(c) == 0) { return nullptr; }
+    cur = cur->children_.at(c);
+  }
+  // 不是终止节点
+  if (!cur->is_value_node_) { return nullptr; }
+  // 强制转换，查看value的类型是否匹配
+  auto node_with_value_ptr = dynamic_cast<const TrieNodeWithValue<T>*>(cur.get());
+  if (!node_with_value_ptr) { return nullptr; }
+  return node_with_value_ptr->value_.get();
 }
 
 template <class T>
