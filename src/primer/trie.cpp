@@ -1,6 +1,7 @@
 #include "primer/trie.h"
 #include <memory>
 #include <string_view>
+#include <utility>
 #include "common/exception.h"
 
 namespace bustub {
@@ -30,10 +31,48 @@ auto Trie::Get(std::string_view key) const -> const T * {
 template <class T>
 auto Trie::Put(std::string_view key, T value) const -> Trie {
   // Note that `T` might be a non-copyable type. Always use `std::move` when creating `shared_ptr` on that value.
-  throw NotImplementedException("Trie::Put is not implemented.");
+  // throw NotImplementedException("Trie::Put is not implemented.");
 
   // You should walk through the trie and create new nodes if necessary. If the node corresponding to the key already
   // exists, you should create a new `TrieNodeWithValue`.
+
+  // 空树
+  if (!this->root_) { return Trie(std::make_shared<TrieNode>()).Put(key, std::move(value)); }
+  // clone 根
+  std::shared_ptr<TrieNode> root = this->root_->Clone();
+  auto cur = root;
+  
+  if (key.empty()) {
+    // 空key,需要在root插入value
+    cur = std::make_shared<TrieNodeWithValue<T>>(cur->children_, std::make_shared<T>(std::move(value)));
+    return Trie(cur);
+  }
+  
+  std::size_t i = 0;
+  for (; i < key.size() - 1; i++) {
+    char c = key[i];
+    std::shared_ptr<TrieNode> son;
+    if (cur->children_.count(c) == 0) {
+      // 不存在对应的儿子时，创建儿子，并更新当前节点的子指针
+      son = std::make_shared<TrieNode>();
+    } else {
+      // 存在儿子，则copy它
+      son = cur->children_[c]->Clone();
+    }
+    cur->children_[c] = son;
+    cur = son;
+  }
+
+  std::shared_ptr<TrieNodeWithValue<T>> val_node;
+  if (cur->children_.count(key[i]) == 0) {
+    // 不存在儿子，就创建新的
+    val_node = std::make_shared<TrieNodeWithValue<T>>(std::make_shared<T>(std::move(value)));
+  } else {
+    // 存在儿子，需要copy孙子
+    val_node = std::make_shared<TrieNodeWithValue<T>>(cur->children_[key[i]]->children_, std::make_shared<T>(std::move(value)));
+  }
+  cur->children_[key[i]] = val_node;
+  return Trie(root);
 }
 
 auto Trie::Remove(std::string_view key) const -> Trie {
