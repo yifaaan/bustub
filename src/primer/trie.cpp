@@ -76,10 +76,46 @@ auto Trie::Put(std::string_view key, T value) const -> Trie {
 }
 
 auto Trie::Remove(std::string_view key) const -> Trie {
-  throw NotImplementedException("Trie::Remove is not implemented.");
+  // throw NotImplementedException("Trie::Remove is not implemented.");
 
   // You should walk through the trie and remove nodes if necessary. If the node doesn't contain a value any more,
   // you should convert it to `TrieNode`. If a node doesn't have children any more, you should remove it.
+  if (!this->root_) { return Trie(); }
+
+  // key为空时
+  if (key.empty()) {
+    if (!this->root_->is_value_node_) {
+      // 未找到对应的value，返回就行
+      return Trie(this->root_->Clone());
+    }
+    // 找到value,转化成TrieNode节点
+    auto node = std::make_shared<TrieNode>(this->root_->children_);
+    return Trie(node);
+  }
+  // key不为空
+  std::shared_ptr<TrieNode> root = this->root_->Clone();
+  auto cur = root;
+  std::size_t i = 0;
+  for (; i < key.size() - 1; i++) {
+    char c = key[i];
+    // 不存在对应的value，返回就行
+    if (cur->children_.count(c) == 0) {
+      return Trie(root);
+    }
+    std::shared_ptr<TrieNode> son = cur->children_[c]->Clone();
+    cur->children_[c] = son;
+    cur = son;
+  }
+
+  if (cur->children_.count(key[i]) == 0) {
+    return Trie(root);
+  }
+  if (!cur->children_[key[i]]->is_value_node_) {
+    return Trie(root);
+  }
+  auto son = std::make_shared<TrieNode>(cur->children_[key[i]]->children_);
+  cur->children_[key[i]] = son;
+  return Trie(root);
 }
 
 // Below are explicit instantiation of template functions.
