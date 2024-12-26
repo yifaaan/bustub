@@ -54,7 +54,7 @@ void TrieStore::Remove(std::string_view key) {
   this->root_lock_.unlock();
 
   root = root.Remove(key);
-  
+
   this->root_lock_.lock();
   this->root_ = root;
   this->root_lock_.unlock();
